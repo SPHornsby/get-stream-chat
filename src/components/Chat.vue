@@ -126,7 +126,7 @@ export default {
     class='wrapper'
   >
     <div v-if='openSettings'>
-      <div>
+      <div v-if='!isDistinct'>
         <input v-model='userToInvite'>
         <button @click='inviteUser'>Invite</button>
       </div>
@@ -146,6 +146,7 @@ export default {
         </button>
       </div>
     </div>
+    <h3 v-if='isDistinct' v-text='"distinct"'/>
     <div class='header'>
       <div class='grow-1'>
         <img v-for='member in displayMembersIcons(selectedChat.state.members)' :key='member.id' :src='member.user.image'/>
