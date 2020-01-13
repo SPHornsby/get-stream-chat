@@ -98,9 +98,6 @@ export default {
         return true;
       }
       return false;
-    },
-    incrementCounter () {
-      this.$store.dispatch('incrementCounter', 1)
     }
   }
 }
@@ -110,7 +107,6 @@ export default {
     v-if='selectedChat'
     class='wrapper'
   >
-    <button @click='incrementCounter'>PUSH ME</button>
     <div v-if='openSettings'>
       <div
         v-for='member in membersToArray(selectedChat.state.members)'
