@@ -9,7 +9,7 @@ export default {
       type: Array,
       default: () => []
     },
-    sChannel: {
+    selectedChannel: {
       type: Object,
       default: () => {}
     },
@@ -50,14 +50,14 @@ export default {
   <div class='makeItSmaller'>
     <div v-if='!buildingNewChat'>
       <ChatList
-        v-if='!sChannel'
+        v-if='!selectedChannel'
         :channels='channels'
         :userID='client.userID'
         @channel-selected='selectChannel'
       />
       <Chat
-        v-if='sChannel'
-        :selectedChat='sChannel'
+        v-if='selectedChannel'
+        :selectedChat='selectedChannel'
         :client='client'
         :userID='this.client.userID'
         @close-chat='$emit("close-channel")'

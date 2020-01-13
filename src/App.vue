@@ -23,7 +23,7 @@
     <ChatMenu
       v-if='loggedIn && !viewProfile'
       :channels='channels'
-      :sChannel='selectedChannel'
+      :selectedChannel='selectedChannel'
       :buildingNewChat='buildingNewChat'
       @close-new-chat='buildingNewChat = false'
       @new-channel='addChannel'
