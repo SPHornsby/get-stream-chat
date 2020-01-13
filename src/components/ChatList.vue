@@ -1,10 +1,11 @@
 <script>
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faTrash, faEyeSlash, faArchive } from '@fortawesome/free-solid-svg-icons'
+import { faTrash, faEyeSlash, faArchive, faUserLock } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faTrash)
 library.add(faEyeSlash)
 library.add(faArchive)
+library.add(faUserLock)
 
 export default {
   components: {
@@ -28,6 +29,12 @@ export default {
     }
   },
   methods: {
+    isDistinct: function(channel) {
+      if (channel && channel.id && channel.id.startsWith('!members')) {
+        return true;
+      }
+      return false;
+    },
     getUserName: function(user) {
       return user.name ? user.name : user.id;
     },
@@ -61,9 +68,11 @@ export default {
       channel.delete();
     },
     hideChat: function(channel) {
+      console.log('c', channel)
       channel.hide();
     },
     unwatchChat(channel) {
+      console.log('c', channel)
       channel.unwatch();
     }
   }
@@ -81,6 +90,9 @@ export default {
         <img v-for='member in displayMembersIcons(channel.state.members)' :key='member.id' :src='member.user.image'/>
       </div>
       <div class='grow-5 text-left'>
+        <p v-if='isDistinct(channel)'>
+          <font-awesome-icon icon="user-lock" />
+        </p>
         <p class='text-bold' v-text='displayMembers(channel.state.members)' />
         <p v-text='lastMessage(channel.state.messages)' />
       </div>

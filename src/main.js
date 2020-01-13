@@ -12,9 +12,6 @@ const store = new Vuex.Store({
     client,
   },
   mutations: {
-    increment (state) {
-      state.count++
-    },
     setClient(state) {
       if (state.client) {
         return;
@@ -24,9 +21,6 @@ const store = new Vuex.Store({
     },
   },
   actions: {
-    incrementCounter(context) {
-      console.log(context)
-    },
     setClient(context) {
       context.commit('setClient');
     },

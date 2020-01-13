@@ -1,8 +1,8 @@
 <script>
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faEllipsisV } from '@fortawesome/free-solid-svg-icons'
+import { faEllipsisV, faUserMinus, faVolumeMute, faVolumeUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-library.add(faEllipsisV)
+library.add([faEllipsisV, faUserMinus, faVolumeMute, faVolumeUp])
 
 export default {
   components: {
@@ -38,7 +38,7 @@ export default {
       return unmutedOnly;
     },
     isDistinct: function() {
-      if (this.selectedChat.id.startsWith('!members')) {
+      if (this.selectedChat && this.selectedChat.id && this.selectedChat.id.startsWith('!members')) {
         return true;
       }
       return false;
@@ -135,14 +135,20 @@ export default {
         :key='member.user.id'
       >
         {{member.user.name}}
-        <button v-if='!isDistinct' @click='removeFromChat(member.user.id)'>remove from chat</button>
+        <button v-if='!isDistinct' @click='removeFromChat(member.user.id)'>
+          <font-awesome-icon icon="user-minus" />
+        </button>
         <button
           v-if='!muted(member.user.id)'
-          :class='muteClass(member.user.id)' @click='muteUser(member.user.id)'>mute user
+          :class='muteClass(member.user.id)' @click='muteUser(member.user.id)'
+        >
+          <font-awesome-icon icon="volume-mute" />
         </button>
         <button
           v-else
-          :class='muteClass(member.user.id)' @click='unMuteUser(member.user.id)'>unmute user
+          :class='muteClass(member.user.id)' @click='unMuteUser(member.user.id)'
+        >
+          <font-awesome-icon icon="volume-up" />
         </button>
       </div>
     </div>
