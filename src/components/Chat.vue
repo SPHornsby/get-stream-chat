@@ -22,12 +22,16 @@ export default {
     return {
       message: '',
       openSettings: false,
-      client: this.$store.state.client
+      client: this.$store.state.client,
+      userToInvite: null
     }
   },
   computed: {
     mutes: function() {
-      return this.client.user.mutes.map(mute => mute.target.id);
+      if(this.client.user && this.client.user.mutes) {
+        return this.client.user.mutes.map(mute => mute.target.id);
+      }
+      return [];
     },
     filteredMessages: function() {
       const unmutedOnly = this.selectedChat.state.messages.filter( message => !this.mutes.includes(message.user.id))
@@ -86,18 +90,26 @@ export default {
       this.$emit('unmute-user', id)
     },
     muteClass: function(id) {
-      const mutes = this.client.user.mutes.map(mute => mute.target.id);
-      if (mutes.includes(id)) {
-        return 'button-blue'
+      if(this.client.user && this.client.user.mutes) {
+        const mutes = this.client.user.mutes.map(mute => mute.target.id);
+        if (mutes.includes(id)) {
+          return 'button-blue'
+        }
       }
       return 'button-white'
     },
     muted: function(id) {
+      if(this.client.user && this.client.user.mutes) {
       const mutes = this.client.user.mutes.map(mute => mute.target.id);
       if (mutes.includes(id)) {
         return true;
       }
+      }
       return false;
+    },
+    inviteUser: function() {
+      console.log(this.userToInvite)
+      this.selectedChat.inviteMembers([this.userToInvite])
     }
   }
 }
@@ -108,6 +120,10 @@ export default {
     class='wrapper'
   >
     <div v-if='openSettings'>
+      <div>
+        <input v-model='userToInvite'>
+        <button @click='inviteUser'>Invite</button>
+      </div>
       <div
         v-for='member in membersToArray(selectedChat.state.members)'
         :key='member.user.id'
