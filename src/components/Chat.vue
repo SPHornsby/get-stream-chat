@@ -36,6 +36,12 @@ export default {
     filteredMessages: function() {
       const unmutedOnly = this.selectedChat.state.messages.filter( message => !this.mutes.includes(message.user.id))
       return unmutedOnly;
+    },
+    isDistinct: function() {
+      if (this.selectedChat.id.startsWith('!members')) {
+        return true;
+      }
+      return false;
     }
   },
   methods: {
@@ -129,7 +135,7 @@ export default {
         :key='member.user.id'
       >
         {{member.user.name}}
-        <button @click='removeFromChat(member.user.id)'>remove from chat</button>
+        <button v-if='!isDistinct' @click='removeFromChat(member.user.id)'>remove from chat</button>
         <button
           v-if='!muted(member.user.id)'
           :class='muteClass(member.user.id)' @click='muteUser(member.user.id)'>mute user
