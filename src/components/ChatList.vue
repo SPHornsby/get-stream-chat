@@ -25,6 +25,9 @@ export default {
     dateSortedChannels: function() {
       return this.channels.slice().sort( (a,b) => {
         return new Date(b.state.last_message_at) - new Date(a.state.last_message_at);
+      }).map( channel => {
+        channel.unreadcount = channel.countUnread();
+        return channel;
       });
     }
   },
@@ -34,9 +37,6 @@ export default {
         return true;
       }
       return false;
-    },
-    getUserName: function(user) {
-      return user.name ? user.name : user.id;
     },
     getDate: function(state) {
       if(state && state.last_message_at != null) {
@@ -68,11 +68,9 @@ export default {
       channel.delete();
     },
     hideChat: function(channel) {
-      console.log('c', channel)
       channel.hide();
     },
     unwatchChat(channel) {
-      console.log('c', channel)
       channel.unwatch();
     }
   }
@@ -96,7 +94,10 @@ export default {
         <p class='text-bold' v-text='displayMembers(channel.state.members)' />
         <p v-text='lastMessage(channel.state.messages)' />
       </div>
-      <div class='grow-1'><p v-text='getDate(channel.state)' /></div>
+      <div class='grow-1'>
+        <p v-text='getDate(channel.state)' />
+        <p v-if='channel.unreadcount > 0' class='text-red' v-text='channel.unreadcount' />
+      </div>
       <div>
         <button @click.stop='destroy(channel)'>
           <font-awesome-icon icon="trash" />
@@ -136,5 +137,11 @@ export default {
   }
   .text-left {
     text-align: left;
+  }
+  .text-red {
+    color: white;
+    background-color: red;
+    width: 20px;
+    border-radius: 5px;
   }
 </style>

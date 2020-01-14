@@ -1,8 +1,8 @@
 <script>
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faEllipsisV, faUserMinus, faVolumeMute, faVolumeUp } from '@fortawesome/free-solid-svg-icons'
+import { faEllipsisV, faUserMinus, faVolumeMute, faVolumeUp, faChevronLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-library.add([faEllipsisV, faUserMinus, faVolumeMute, faVolumeUp])
+library.add([faEllipsisV, faUserMinus, faVolumeMute, faVolumeUp, faChevronLeft])
 
 export default {
   components: {
@@ -23,7 +23,8 @@ export default {
       message: '',
       openSettings: false,
       client: this.$store.state.client,
-      userToInvite: null
+      userToInvite: null,
+      chatName: this.selectedChat.name || ''
     }
   },
   computed: {
@@ -50,6 +51,7 @@ export default {
     },
     sendMessage: function() {
       this.selectedChat.sendMessage({ text: this.message })
+      this.message = '';
     },
     messageSide: function(msg) {
       if(msg.user.id === this.userID) {
@@ -113,9 +115,21 @@ export default {
       }
       return false;
     },
-    inviteUser: function() {
-      console.log(this.userToInvite)
-      this.selectedChat.inviteMembers([this.userToInvite])
+    inviteUser: async function() {
+      this.selectedChat.inviteMembers([this.userToInvite]);
+      // console.log('inviting', this.userToInvite)
+      // const result = await this.selectedChat.update({
+      //   invites: [this.userToInvite]
+      // });
+      // console.log('asdasdad', result)
+    },
+    changeName: async function() {
+      // const result = await this.selectedChat.update({
+      //   set: {
+      //     name: this.chatName
+      //   }
+      // });
+      // console.log('asdasdad', result)
     }
   }
 }
@@ -126,6 +140,8 @@ export default {
     class='wrapper'
   >
     <div v-if='openSettings'>
+      <input v-model='chatName'>
+      <button @click='changeName'>Change/Set Name</button>
       <div v-if='!isDistinct'>
         <input v-model='userToInvite'>
         <button @click='inviteUser'>Invite</button>
@@ -154,6 +170,9 @@ export default {
     </div>
     <h3 v-if='isDistinct' v-text='"distinct"'/>
     <div class='header'>
+      <button class='btn-back' @click='$emit("close-chat")'>
+        <font-awesome-icon icon='chevron-left' />
+      </button>
       <div class='grow-1'>
         <img v-for='member in displayMembersIcons(selectedChat.state.members)' :key='member.id' :src='member.user.image'/>
       </div>
@@ -175,7 +194,7 @@ export default {
     </div>
     <br/>
     <div class='new-message'>
-      <input v-model="message">
+      <input v-model="message" @keyup.enter='sendMessage'>
       <button class='send-button' @click='sendMessage' v-text='"send"'/>
     </div>
     <button class='btn-danger' @click='$emit("close-chat")'>close chat</button>
@@ -219,6 +238,11 @@ export default {
 .btn-danger {
   color: white;
   background-color: #d9534f;
+}
+.btn-back {
+  color: black;
+  background-color: #FFF192;
+  border: none;
 }
 .send-button {
   border-radius: 2px;

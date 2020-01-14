@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <div v-if='!loggedIn'>
-      <input v-model='userID'/>
+      <input v-model='userID' @keyup.enter="logIn"/>
       <button class='btn-green' @click='logIn'>Login</button>
     </div>
     <div class='d-flex space-between m-b' v-else>
@@ -15,6 +15,7 @@
       >
         <font-awesome-icon icon="plus" />
       </button>
+      <button @click='getInvites'>Get Invites</button>
     </div>
     <Profile
       v-if='viewProfile'
@@ -60,6 +61,7 @@ export default {
     return {
       client: null,
       channels: [],
+      pendingInvites: [],
       selectedChannel: null,
       loggedIn: false,
       userID: '',
@@ -70,21 +72,33 @@ export default {
   created: function () {
     this.$store.dispatch('setClient');
     const client = this.client = this.$store.state.client //new StreamChat('mnnvqhc7wzfz');
+
     client.on((event) => {
       // console.log('e', event.type);
       var eventsRequiringRefresh = [
         'channel.deleted',
-        'notification.added_to_channel'
+        'notification.added_to_channel',
+        'notification.mutes_updated',
+        'message.new'
       ]
       if (eventsRequiringRefresh.includes(event.type)) {
         // console.log('refreshing', event.type)
-        client.queryChannels({members: { $in: [this.userID] }}, {}, {limit: 200}).then( c => {
+        client.queryChannels( {members: { $in: [this.userID] }}, {}, {limit: 200}).then( c => {
           this.channels = c;
         });
+      }
+      if(event.type === 'notification.invited') {
+        // console.log('invited', event)
       }
     })
   },
   methods: {
+    getInvites: function() {
+      this.client.queryChannels({invite: 'pending'}).then(p => {
+        // console.log('p', p)
+        this.pendingInvites = p;
+      })
+    },
     openProfile: function() {
       this.viewProfile = true;
     },
@@ -106,6 +120,7 @@ export default {
     },
     logIn() {
       if(this.userID.length > 0) {
+        this.client.disconnect();
         this.logInUser({id: this.userID})
       }
     },
@@ -127,6 +142,19 @@ export default {
       await this.client.queryChannels({}, {}, {limit: 200}).then( c => {
         this.channels = c;
       });
+      // const invites = this.client.queryChannels({
+      //   invite: 'accepted',
+      // });
+      // const rejected = this.client.queryChannels({
+      //   invite: 'rejected',
+      // });
+      this.client.queryChannels({
+        invite: 'pending',
+      }).then( p => this.pendingInvites = p);
+      // await this.client.queryChannels({}, {}, {
+      //   invite: true,
+      // }).then( response => console.log('invite true', response));
+      // console.log(invites, rejected, pending)
     },
     addChannel: async function(channelData) {
       const members = channelData.channel.members.map(m => m.user_id);
@@ -135,8 +163,9 @@ export default {
       if (identicalChat.length > 0) {
         this.selectChannel({id: identicalChat[0].cid});
       } else {
+        // console.log('no chat found')
         const id = members.length > 2 ? uuidv1() : null;
-        const conversation = this.client.channel('messaging', id, {
+        const conversation = this.client.channel('ethika-messaging', id, {
             members
         });
         conversation.create();
