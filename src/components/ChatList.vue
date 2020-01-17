@@ -16,12 +16,14 @@ export default {
       type: Array,
       default: () => []
     },
-    userID: {
-      type: String,
-      default: ''
-    }
   },
   computed:{
+    client: function() {
+      return this.$store.state.client;
+    },
+    userID: function() {
+      return this.client.userID
+    },
     dateSortedChannels: function() {
       return this.channels.slice().sort( (a,b) => {
         return new Date(b.state.last_message_at) - new Date(a.state.last_message_at);
@@ -117,7 +119,7 @@ export default {
     border: 1px solid black;
     margin: 2px;
     padding: 2px;
-    background-color: goldenrod;
+    background-color: #DDD;
   }
   .d-flex {
     display: flex

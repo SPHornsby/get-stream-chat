@@ -22,12 +22,16 @@ export default {
     return {
       message: '',
       openSettings: false,
-      client: this.$store.state.client,
+      // client: this.$store.state.client,
       userToInvite: null,
-      chatName: this.selectedChat.name || ''
+      chatName: this.selectedChat.name || '',
+      userToAdd: null
     }
   },
   computed: {
+    client: function() {
+      return this.$store.state.client
+    },
     mutes: function() {
       if(this.client.user && this.client.user.mutes) {
         return this.client.user.mutes.map(mute => mute.target.id);
@@ -43,6 +47,13 @@ export default {
         return true;
       }
       return false;
+    },
+    isInvited: function() {
+      const thisUser = this.selectedChat.state.members[this.userID];
+      if (thisUser.invited && (!thisUser.invite_accepted_at && !thisUser.invite_rejected_at)) {
+        return true;
+      }
+      return false;
     }
   },
   methods: {
@@ -50,8 +61,10 @@ export default {
       return user.name ? user.name : user.id;
     },
     sendMessage: function() {
-      this.selectedChat.sendMessage({ text: this.message })
-      this.message = '';
+      if(this.message) {
+        this.selectedChat.sendMessage({ text: this.message })
+        this.message = null;
+      }
     },
     messageSide: function(msg) {
       if(msg.user.id === this.userID) {
@@ -115,22 +128,40 @@ export default {
       }
       return false;
     },
-    inviteUser: async function() {
+    inviteUser: function() {
+      if (this.isInvited) {
+        return;
+      }
+      console.log(this.userToInvite)
       this.selectedChat.inviteMembers([this.userToInvite]);
-      // console.log('inviting', this.userToInvite)
-      // const result = await this.selectedChat.update({
-      //   invites: [this.userToInvite]
-      // });
-      // console.log('asdasdad', result)
     },
-    changeName: async function() {
+    addUser: function() {
+      if (this.isInvited) {
+        return;
+      }
+      console.log(this.userToAdd)
+      this.selectedChat.addMembers([this.userToAdd]);
+    },
+    changeName: function() {
       // const result = await this.selectedChat.update({
       //   set: {
       //     name: this.chatName
       //   }
       // });
       // console.log('asdasdad', result)
+    },
+    acceptInvite: function() {
+      this.selectedChat.acceptInvite({
+        message: {
+          text: `${this.client.user.name} joined this channel!`
+        },
+      })
+    },
+    rejectInvite: function() {
+      this.selectedChat.rejectInvite()
+      this.selectedChat.removeMembers([this.client.userID])
     }
+    
   }
 }
 </script>
@@ -145,6 +176,9 @@ export default {
       <div v-if='!isDistinct'>
         <input v-model='userToInvite'>
         <button @click='inviteUser'>Invite</button>
+        <hr>
+        <input v-model='userToAdd'>
+        <button @click='addUser'>Add</button>
       </div>
       <div
         v-for='member in membersToArray(selectedChat.state.members)'
@@ -183,6 +217,10 @@ export default {
         </button>
       </div>
     </div>
+    <div v-if='isInvited'>
+      <button @click='acceptInvite'>Accept Invite</button>
+      <button @click='rejectInvite'>Reject Invite</button>
+    </div>
     <div
       v-for='msg in filteredMessages'
       :key='msg.id'
@@ -203,10 +241,10 @@ export default {
 <style scoped>
 .wrapper {
   text-align: center;
-  background-color: #ddd;
+  background-color: #DDD;
   margin: auto;
   padding: 0 0 10px 0;
-  max-width: 60%;
+  max-width: 100%;
 }
 .header {
   display: flex;
@@ -246,7 +284,7 @@ export default {
 }
 .send-button {
   border-radius: 2px;
-  background-color: goldenrod;
+  background-color: #DDD;
 }
 .new-message input{
   width: 75%;

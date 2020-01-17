@@ -45,8 +45,7 @@ export default {
       }
     },
     searchAgain: function() {
-      console.log('ea', this.newSearch)
-            this.searchResults = [];
+      this.searchResults = [];
       if(this.newSearch.length > 0) {
         this.client.queryUsers({ name: { $autocomplete: this.newSearch } }).then ( r => {
           this.searchResults = r.users;
@@ -54,12 +53,10 @@ export default {
       }
     },
     report: function() {
-      console.log(this.newSearch)
       this.getUser(this.newSearch)
       this.newSearch = '';
     },
     getUser: function(name) {
-      console.log('searching')
       const newUser = this.searchResults.filter(user => user.name = name)[0];
       this.addUserToChat(newUser);
     }
