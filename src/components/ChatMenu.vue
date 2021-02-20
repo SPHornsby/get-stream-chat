@@ -9,7 +9,11 @@ export default {
       type: Array,
       default: () => []
     },
-    sChannel: {
+    requests: {
+      type: Array,
+      default: () => []
+    },
+    selectedChannel: {
       type: Object,
       default: () => {}
     },
@@ -49,15 +53,28 @@ export default {
 <template>
   <div class='makeItSmaller'>
     <div v-if='!buildingNewChat'>
-      <ChatList
-        v-if='!sChannel'
-        :channels='channels'
-        :userID='client.userID'
-        @channel-selected='selectChannel'
-      />
+      <div v-if='!selectedChannel'>
+        <ChatList
+          :channels='channels'
+          :userID='client.userID'
+          @channel-selected='selectChannel'
+        />
+        
+        <div v-if='requests.length > 0'>
+          <hr>
+          <h3 v-text='"Requests"' />
+          <ChatList
+            :channels='requests'
+            :requests='true'
+            :userID='client.userID'
+            @channel-selected='selectChannel'
+          />
+        </div>
+        <hr>
+      </div>
       <Chat
-        v-if='sChannel'
-        :selectedChat='sChannel'
+        v-if='selectedChannel'
+        :selectedChat='selectedChannel'
         :client='client'
         :userID='this.client.userID'
         @close-chat='$emit("close-channel")'
@@ -86,7 +103,6 @@ export default {
   }
   .makeItSmaller {
     margin: auto;
-    max-width: 80%;
   }
 
 </style>

@@ -1,8 +1,8 @@
 <script>
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faEllipsisV } from '@fortawesome/free-solid-svg-icons'
+import { faEllipsisV, faUserMinus, faVolumeMute, faVolumeUp, faChevronLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-library.add(faEllipsisV)
+library.add([faEllipsisV, faUserMinus, faVolumeMute, faVolumeUp, faChevronLeft])
 
 export default {
   components: {
@@ -22,16 +22,38 @@ export default {
     return {
       message: '',
       openSettings: false,
-      client: this.$store.state.client
+      // client: this.$store.state.client,
+      userToInvite: null,
+      chatName: this.selectedChat.name || '',
+      userToAdd: null
     }
   },
   computed: {
+    client: function() {
+      return this.$store.state.client
+    },
     mutes: function() {
-      return this.client.user.mutes.map(mute => mute.target.id);
+      if(this.client.user && this.client.user.mutes) {
+        return this.client.user.mutes.map(mute => mute.target.id);
+      }
+      return [];
     },
     filteredMessages: function() {
       const unmutedOnly = this.selectedChat.state.messages.filter( message => !this.mutes.includes(message.user.id))
       return unmutedOnly;
+    },
+    isDistinct: function() {
+      if (this.selectedChat && this.selectedChat.id && this.selectedChat.id.startsWith('!members')) {
+        return true;
+      }
+      return false;
+    },
+    isInvited: function() {
+      const thisUser = this.selectedChat.state.members[this.userID];
+      if (thisUser.invited && (!thisUser.invite_accepted_at && !thisUser.invite_rejected_at)) {
+        return true;
+      }
+      return false;
     }
   },
   methods: {
@@ -39,7 +61,10 @@ export default {
       return user.name ? user.name : user.id;
     },
     sendMessage: function() {
-      this.selectedChat.sendMessage({ text: this.message })
+      if(this.message) {
+        this.selectedChat.sendMessage({ text: this.message })
+        this.message = null;
+      }
     },
     messageSide: function(msg) {
       if(msg.user.id === this.userID) {
@@ -86,19 +111,57 @@ export default {
       this.$emit('unmute-user', id)
     },
     muteClass: function(id) {
-      const mutes = this.client.user.mutes.map(mute => mute.target.id);
-      if (mutes.includes(id)) {
-        return 'button-blue'
+      if(this.client.user && this.client.user.mutes) {
+        const mutes = this.client.user.mutes.map(mute => mute.target.id);
+        if (mutes.includes(id)) {
+          return 'button-blue'
+        }
       }
       return 'button-white'
     },
     muted: function(id) {
+      if(this.client.user && this.client.user.mutes) {
       const mutes = this.client.user.mutes.map(mute => mute.target.id);
       if (mutes.includes(id)) {
         return true;
       }
+      }
       return false;
+    },
+    inviteUser: function() {
+      if (this.isInvited) {
+        return;
+      }
+      console.log(this.userToInvite)
+      this.selectedChat.inviteMembers([this.userToInvite]);
+    },
+    addUser: function() {
+      if (this.isInvited) {
+        return;
+      }
+      console.log(this.userToAdd)
+      this.selectedChat.addMembers([this.userToAdd]);
+    },
+    changeName: function() {
+      // const result = await this.selectedChat.update({
+      //   set: {
+      //     name: this.chatName
+      //   }
+      // });
+      // console.log('asdasdad', result)
+    },
+    acceptInvite: function() {
+      this.selectedChat.acceptInvite({
+        message: {
+          text: `${this.client.user.name} joined this channel!`
+        },
+      })
+    },
+    rejectInvite: function() {
+      this.selectedChat.rejectInvite()
+      this.selectedChat.removeMembers([this.client.userID])
     }
+    
   }
 }
 </script>
@@ -108,23 +171,42 @@ export default {
     class='wrapper'
   >
     <div v-if='openSettings'>
+      <input v-model='chatName'>
+      <button @click='changeName'>Change/Set Name</button>
+      <div v-if='!isDistinct'>
+        <input v-model='userToInvite'>
+        <button @click='inviteUser'>Invite</button>
+        <hr>
+        <input v-model='userToAdd'>
+        <button @click='addUser'>Add</button>
+      </div>
       <div
         v-for='member in membersToArray(selectedChat.state.members)'
         :key='member.user.id'
       >
         {{member.user.name}}
-        <button @click='removeFromChat(member.user.id)'>remove from chat</button>
+        <button v-if='!isDistinct' @click='removeFromChat(member.user.id)'>
+          <font-awesome-icon icon="user-minus" />
+        </button>
         <button
           v-if='!muted(member.user.id)'
-          :class='muteClass(member.user.id)' @click='muteUser(member.user.id)'>mute user
+          :class='muteClass(member.user.id)' @click='muteUser(member.user.id)'
+        >
+          <font-awesome-icon icon="volume-mute" />
         </button>
         <button
           v-else
-          :class='muteClass(member.user.id)' @click='unMuteUser(member.user.id)'>unmute user
+          :class='muteClass(member.user.id)' @click='unMuteUser(member.user.id)'
+        >
+          <font-awesome-icon icon="volume-up" />
         </button>
       </div>
     </div>
+    <h3 v-if='isDistinct' v-text='"distinct"'/>
     <div class='header'>
+      <button class='btn-back' @click='$emit("close-chat")'>
+        <font-awesome-icon icon='chevron-left' />
+      </button>
       <div class='grow-1'>
         <img v-for='member in displayMembersIcons(selectedChat.state.members)' :key='member.id' :src='member.user.image'/>
       </div>
@@ -134,6 +216,10 @@ export default {
           <font-awesome-icon icon="ellipsis-v" />
         </button>
       </div>
+    </div>
+    <div v-if='isInvited'>
+      <button @click='acceptInvite'>Accept Invite</button>
+      <button @click='rejectInvite'>Reject Invite</button>
     </div>
     <div
       v-for='msg in filteredMessages'
@@ -146,7 +232,7 @@ export default {
     </div>
     <br/>
     <div class='new-message'>
-      <input v-model="message">
+      <input v-model="message" @keyup.enter='sendMessage'>
       <button class='send-button' @click='sendMessage' v-text='"send"'/>
     </div>
     <button class='btn-danger' @click='$emit("close-chat")'>close chat</button>
@@ -155,10 +241,10 @@ export default {
 <style scoped>
 .wrapper {
   text-align: center;
-  background-color: #ddd;
+  background-color: #DDD;
   margin: auto;
   padding: 0 0 10px 0;
-  max-width: 60%;
+  max-width: 100%;
 }
 .header {
   display: flex;
@@ -191,9 +277,14 @@ export default {
   color: white;
   background-color: #d9534f;
 }
+.btn-back {
+  color: black;
+  background-color: #FFF192;
+  border: none;
+}
 .send-button {
   border-radius: 2px;
-  background-color: goldenrod;
+  background-color: #DDD;
 }
 .new-message input{
   width: 75%;

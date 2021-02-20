@@ -1,10 +1,11 @@
 <script>
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faTrash, faEyeSlash, faArchive } from '@fortawesome/free-solid-svg-icons'
+import { faTrash, faEyeSlash, faArchive, faUserLock } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faTrash)
 library.add(faEyeSlash)
 library.add(faArchive)
+library.add(faUserLock)
 
 export default {
   components: {
@@ -15,21 +16,29 @@ export default {
       type: Array,
       default: () => []
     },
-    userID: {
-      type: String,
-      default: ''
-    }
   },
   computed:{
+    client: function() {
+      return this.$store.state.client;
+    },
+    userID: function() {
+      return this.client.userID
+    },
     dateSortedChannels: function() {
       return this.channels.slice().sort( (a,b) => {
         return new Date(b.state.last_message_at) - new Date(a.state.last_message_at);
+      }).map( channel => {
+        channel.unreadcount = channel.countUnread();
+        return channel;
       });
     }
   },
   methods: {
-    getUserName: function(user) {
-      return user.name ? user.name : user.id;
+    isDistinct: function(channel) {
+      if (channel && channel.id && channel.id.startsWith('!members')) {
+        return true;
+      }
+      return false;
     },
     getDate: function(state) {
       if(state && state.last_message_at != null) {
@@ -81,10 +90,16 @@ export default {
         <img v-for='member in displayMembersIcons(channel.state.members)' :key='member.id' :src='member.user.image'/>
       </div>
       <div class='grow-5 text-left'>
+        <p v-if='isDistinct(channel)'>
+          <font-awesome-icon icon="user-lock" />
+        </p>
         <p class='text-bold' v-text='displayMembers(channel.state.members)' />
         <p v-text='lastMessage(channel.state.messages)' />
       </div>
-      <div class='grow-1'><p v-text='getDate(channel.state)' /></div>
+      <div class='grow-1'>
+        <p v-text='getDate(channel.state)' />
+        <p v-if='channel.unreadcount > 0' class='text-red' v-text='channel.unreadcount' />
+      </div>
       <div>
         <button @click.stop='destroy(channel)'>
           <font-awesome-icon icon="trash" />
@@ -104,7 +119,7 @@ export default {
     border: 1px solid black;
     margin: 2px;
     padding: 2px;
-    background-color: goldenrod;
+    background-color: #DDD;
   }
   .d-flex {
     display: flex
@@ -124,5 +139,11 @@ export default {
   }
   .text-left {
     text-align: left;
+  }
+  .text-red {
+    color: white;
+    background-color: red;
+    width: 20px;
+    border-radius: 5px;
   }
 </style>
